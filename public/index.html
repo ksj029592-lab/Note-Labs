@@ -50,52 +50,6 @@
         <button id="btnDrawMode" class="secondary">✎ 그림 모드</button>
       </section>
 
-      <details id="toolSectionText" class="tool-section" open>
-        <summary>텍스트 도구</summary>
-        <div class="tool-grid">
-          <button id="btnUndo" class="secondary icon-btn" title="실행취소" aria-label="실행취소">↶</button>
-          <button id="btnRedo" class="secondary icon-btn" title="다시실행" aria-label="다시실행">↷</button>
-          <button id="btnClearFormat" class="secondary icon-btn" title="서식 제거" aria-label="서식 제거">Tx</button>
-          <button id="btnInsertDate" class="secondary icon-btn" title="날짜 삽입" aria-label="날짜 삽입">📅</button>
-        </div>
-        <div class="tool-grid">
-          <button id="btnBold" class="secondary icon-btn" title="굵게" aria-label="굵게">B</button>
-          <button id="btnItalic" class="secondary icon-btn" title="기울임" aria-label="기울임">I</button>
-          <button id="btnUnderline" class="secondary icon-btn" title="밑줄" aria-label="밑줄">U</button>
-          <button id="btnQuote" class="secondary icon-btn" title="인용" aria-label="인용">❝</button>
-        </div>
-
-        <div class="tool-row">
-          <button id="btnFontDec" class="secondary">크기 -</button>
-          <button id="btnFontInc" class="secondary">크기 +</button>
-          <span class="tool-meta">현재 <span id="fontSizeValue">17</span>px</span>
-        </div>
-
-        <label class="tool-label-inline" for="textColorPicker">글자색</label>
-        <div class="tool-row">
-          <input id="textColorPicker" type="color" value="#0b7a69" />
-          <button id="btnApplyTextColor" class="secondary">적용</button>
-        </div>
-
-        <label class="tool-label-inline">형광펜 색상</label>
-        <div class="tool-row">
-          <button class="color-chip" data-highlight="#fff59d" style="background:#fff59d" title="노랑"></button>
-          <button class="color-chip" data-highlight="#b9f6ca" style="background:#b9f6ca" title="초록"></button>
-          <button class="color-chip" data-highlight="#ffd1dc" style="background:#ffd1dc" title="핑크"></button>
-          <button class="color-chip" data-highlight="#c5e1ff" style="background:#c5e1ff" title="파랑"></button>
-        </div>
-      </details>
-
-      <details id="toolSectionPage" class="tool-section" open>
-        <summary>페이지 도구</summary>
-        <div class="tool-grid">
-          <button id="btnToolAddPage" class="secondary">페이지 추가</button>
-          <button id="btnToolDeletePage" class="secondary">현재 페이지 삭제</button>
-          <button id="btnDuplicatePage" class="secondary">현재 페이지 복제</button>
-          <button id="btnInsertTemplate" class="secondary icon-btn" title="텍스트 추가" aria-label="텍스트 추가">＋T</button>
-        </div>
-      </details>
-
       <details id="toolSectionDraw" class="tool-section" open>
         <summary>그림판 도구</summary>
         <div class="tool-grid">
@@ -118,6 +72,47 @@
           <button class="color-chip draw-color-chip" data-draw-color="#b0166b" style="background:#b0166b" title="자홍"></button>
         </div>
         <input id="drawWidthRange" type="range" min="1" max="24" value="3" />
+      </details>
+
+      <details id="toolSectionText" class="tool-section" open>
+        <summary>텍스트 도구</summary>
+        <div class="tool-grid">
+          <button id="btnUndo" class="secondary icon-btn" title="실행취소" aria-label="실행취소">↶</button>
+          <button id="btnRedo" class="secondary icon-btn" title="다시실행" aria-label="다시실행">↷</button>
+          <button id="btnClearFormat" class="secondary icon-btn" title="서식 제거" aria-label="서식 제거">Tx</button>
+          <button id="btnInsertDate" class="secondary icon-btn" title="날짜 삽입" aria-label="날짜 삽입">📅</button>
+          <button id="btnBold" class="secondary icon-btn" title="굵게" aria-label="굵게">B</button>
+          <button id="btnItalic" class="secondary icon-btn" title="기울임" aria-label="기울임">I</button>
+          <button id="btnUnderline" class="secondary icon-btn" title="밑줄" aria-label="밑줄">U</button>
+          <button id="btnQuote" class="secondary icon-btn" title="인용" aria-label="인용">❝</button>
+          <button id="btnFontDec" class="secondary icon-btn" title="글자 크기 감소" aria-label="글자 크기 감소">크기 -</button>
+          <button id="btnFontInc" class="secondary icon-btn" title="글자 크기 증가" aria-label="글자 크기 증가">크기 +</button>
+          <button id="btnApplyTextColor" class="secondary icon-btn" title="글자색 적용" aria-label="글자색 적용">적용</button>
+          <span class="tool-meta tool-meta-wide">현재 <span id="fontSizeValue">17</span>px</span>
+        </div>
+
+        <label class="tool-label-inline" for="textColorPicker">글자색</label>
+        <div class="tool-row">
+          <input id="textColorPicker" type="color" value="#0b7a69" />
+        </div>
+
+        <label class="tool-label-inline">형광펜 색상</label>
+        <div class="tool-row color-chip-row">
+          <button class="color-chip" data-highlight="#fff59d" style="background:#fff59d" title="노랑"></button>
+          <button class="color-chip" data-highlight="#b9f6ca" style="background:#b9f6ca" title="초록"></button>
+          <button class="color-chip" data-highlight="#ffd1dc" style="background:#ffd1dc" title="핑크"></button>
+          <button class="color-chip" data-highlight="#c5e1ff" style="background:#c5e1ff" title="파랑"></button>
+        </div>
+      </details>
+
+      <details id="toolSectionPage" class="tool-section" open>
+        <summary>페이지 도구</summary>
+        <div class="tool-grid">
+          <button id="btnToolAddPage" class="secondary">페이지 추가</button>
+          <button id="btnToolDeletePage" class="secondary">현재 페이지 삭제</button>
+          <button id="btnDuplicatePage" class="secondary">현재 페이지 복제</button>
+          <button id="btnInsertTemplate" class="secondary icon-btn" title="텍스트 추가" aria-label="텍스트 추가">＋T</button>
+        </div>
       </details>
 
       <details class="tool-section">
