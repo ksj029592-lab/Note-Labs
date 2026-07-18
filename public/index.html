@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NoteLabs</title>
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <button id="btnTools" class="tools-fab" aria-label="도구" aria-expanded="false" aria-controls="toolsDrawer">도구</button>
+
+    <main class="shell">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1>NoteLabs</h1>
+          <p id="currentNoteLabel">노트를 선택하세요</p>
+        </div>
+        <div class="topbar-actions">
+          <button id="btnAddPage" class="secondary">+ 페이지 추가</button>
+          <div class="status" id="statusPill">준비됨</div>
+          <button id="btnMenu" class="menu-btn" aria-expanded="false" aria-controls="menuDrawer">☰</button>
+        </div>
+      </header>
+
+      <section class="page-strip panel">
+        <div id="pageTabs" class="page-tabs"></div>
+      </section>
+
+      <section class="panel note-main">
+        <div id="noteSurface" class="note-surface">
+          <canvas id="drawCanvas" class="draw-canvas"></canvas>
+          <div
+            id="pageText"
+            class="note-editor"
+            contenteditable="false"
+            data-placeholder="텍스트 도구에서 '텍스트 모드'를 선택하면 입력할 수 있습니다."
+          ></div>
+        </div>
+      </section>
+    </main>
+
+    <aside id="toolsDrawer" class="tools-drawer" aria-hidden="true">
+      <div class="tools-head">
+        <h2>편집 도구</h2>
+        <button id="btnCloseTools" class="secondary">닫기</button>
+      </div>
+
+      <section class="mode-switcher panel-lite" aria-label="편집 모드 전환">
+        <button id="btnTextMode" class="secondary">T 텍스트 모드</button>
+        <button id="btnDrawMode" class="secondary">✎ 그림 모드</button>
+      </section>
+
+      <details id="toolSectionText" class="tool-section" open>
+        <summary>텍스트 도구</summary>
+        <div class="tool-grid">
+          <button id="btnUndo" class="secondary icon-btn" title="실행취소" aria-label="실행취소">↶</button>
+          <button id="btnRedo" class="secondary icon-btn" title="다시실행" aria-label="다시실행">↷</button>
+          <button id="btnClearFormat" class="secondary icon-btn" title="서식 제거" aria-label="서식 제거">Tx</button>
+          <button id="btnInsertDate" class="secondary icon-btn" title="날짜 삽입" aria-label="날짜 삽입">📅</button>
+        </div>
+        <div class="tool-grid">
+          <button id="btnBold" class="secondary icon-btn" title="굵게" aria-label="굵게">B</button>
+          <button id="btnItalic" class="secondary icon-btn" title="기울임" aria-label="기울임">I</button>
+          <button id="btnUnderline" class="secondary icon-btn" title="밑줄" aria-label="밑줄">U</button>
+          <button id="btnQuote" class="secondary icon-btn" title="인용" aria-label="인용">❝</button>
+        </div>
+
+        <div class="tool-row">
+          <button id="btnFontDec" class="secondary">크기 -</button>
+          <button id="btnFontInc" class="secondary">크기 +</button>
+          <span class="tool-meta">현재 <span id="fontSizeValue">17</span>px</span>
+        </div>
+
+        <label class="tool-label-inline" for="textColorPicker">글자색</label>
+        <div class="tool-row">
+          <input id="textColorPicker" type="color" value="#0b7a69" />
+          <button id="btnApplyTextColor" class="secondary">적용</button>
+        </div>
+
+        <label class="tool-label-inline">형광펜 색상</label>
+        <div class="tool-row">
+          <button class="color-chip" data-highlight="#fff59d" style="background:#fff59d" title="노랑"></button>
+          <button class="color-chip" data-highlight="#b9f6ca" style="background:#b9f6ca" title="초록"></button>
+          <button class="color-chip" data-highlight="#ffd1dc" style="background:#ffd1dc" title="핑크"></button>
+          <button class="color-chip" data-highlight="#c5e1ff" style="background:#c5e1ff" title="파랑"></button>
+        </div>
+      </details>
+
+      <details id="toolSectionPage" class="tool-section" open>
+        <summary>페이지 도구</summary>
+        <div class="tool-grid">
+          <button id="btnToolAddPage" class="secondary">페이지 추가</button>
+          <button id="btnToolDeletePage" class="secondary">현재 페이지 삭제</button>
+          <button id="btnDuplicatePage" class="secondary">현재 페이지 복제</button>
+          <button id="btnInsertTemplate" class="secondary icon-btn" title="텍스트 추가" aria-label="텍스트 추가">＋T</button>
+        </div>
+      </details>
+
+      <details id="toolSectionDraw" class="tool-section" open>
+        <summary>그림판 도구</summary>
+        <div class="tool-grid">
+          <button id="btnPenTool" class="secondary icon-btn draw-icon-btn" title="펜" aria-label="펜">✎</button>
+          <button id="btnMarkerTool" class="secondary icon-btn draw-icon-btn" title="형광펜" aria-label="형광펜">🖍</button>
+          <button id="btnEraserTool" class="secondary icon-btn draw-icon-btn" title="지우개" aria-label="지우개">⌫</button>
+          <button id="btnClearDrawing" class="secondary icon-btn draw-icon-btn" title="페이지 그림 지우기" aria-label="페이지 그림 지우기">🧹</button>
+        </div>
+
+        <label class="tool-label-inline" for="drawColorPicker">그림 색상</label>
+        <div class="tool-row">
+          <input id="drawColorPicker" type="color" value="#1b2225" />
+          <span class="tool-meta">선 두께 <span id="drawWidthValue">3</span>px</span>
+        </div>
+        <div id="drawColorChips" class="tool-row color-chip-row">
+          <button class="color-chip draw-color-chip" data-draw-color="#1b2225" style="background:#1b2225" title="검정"></button>
+          <button class="color-chip draw-color-chip" data-draw-color="#0b7a69" style="background:#0b7a69" title="청록"></button>
+          <button class="color-chip draw-color-chip" data-draw-color="#d15b39" style="background:#d15b39" title="주황"></button>
+          <button class="color-chip draw-color-chip" data-draw-color="#275dff" style="background:#275dff" title="파랑"></button>
+          <button class="color-chip draw-color-chip" data-draw-color="#b0166b" style="background:#b0166b" title="자홍"></button>
+        </div>
+        <input id="drawWidthRange" type="range" min="1" max="24" value="3" />
+      </details>
+
+      <details class="tool-section">
+        <summary>정렬/탐색</summary>
+        <div class="tool-grid">
+          <button id="btnAlignLeft" class="secondary icon-btn" title="왼쪽 정렬" aria-label="왼쪽 정렬">≡←</button>
+          <button id="btnAlignCenter" class="secondary icon-btn" title="가운데 정렬" aria-label="가운데 정렬">≡↔</button>
+          <button id="btnAlignRight" class="secondary icon-btn" title="오른쪽 정렬" aria-label="오른쪽 정렬">≡→</button>
+        </div>
+
+        <div class="tool-grid">
+          <button id="btnInsertChecklist" class="secondary icon-btn" title="체크리스트" aria-label="체크리스트">☑</button>
+          <button id="btnInsertDivider" class="secondary icon-btn" title="구분선" aria-label="구분선">─</button>
+          <button id="btnInsertBullet" class="secondary icon-btn" title="불릿 목록" aria-label="불릿 목록">•</button>
+        </div>
+
+        <label class="tool-label-inline" for="toolFindQuery">페이지 내 텍스트 찾기</label>
+        <div class="tool-row">
+          <input id="toolFindQuery" type="text" placeholder="찾을 텍스트" />
+          <button id="btnFindNext" class="secondary">다음 찾기</button>
+        </div>
+        <p class="tool-hint">문자 수: <span id="toolCharCount">0</span> · 단어 수: <span id="toolWordCount">0</span></p>
+      </details>
+
+      <p class="tool-hint">선택 영역이 없으면 현재 페이지 전체에 적용됩니다.</p>
+    </aside>
+
+    <div id="toolsBackdrop" class="tools-backdrop"></div>
+
+    <aside id="menuDrawer" class="menu-drawer" aria-hidden="true">
+      <div class="menu-head">
+        <h2>메뉴</h2>
+        <button id="btnCloseMenu" class="secondary">닫기</button>
+      </div>
+
+      <input id="noteId" value="" type="hidden" />
+      <input id="expectedVersion" type="number" value="1" min="1" hidden />
+      <textarea id="strokesJson" rows="8" hidden>[]</textarea>
+
+      <div class="auth-panel">
+        <h3>계정</h3>
+        <p class="menu-current-note">로그인 사용자: <span id="authUserLabel">로그아웃 상태</span></p>
+
+        <p class="tool-hint">데모 계정 빠른 진입</p>
+        <div class="quick-account-list" role="group" aria-label="데모 계정 빠른 진입">
+          <button id="btnQuickUser1" type="button" class="secondary quick-account-btn">user1</button>
+          <button id="btnQuickUser2" type="button" class="secondary quick-account-btn">user2</button>
+          <button id="btnQuickUser3" type="button" class="secondary quick-account-btn">user3</button>
+        </div>
+
+        <details class="manual-auth-details">
+          <summary>직접 로그인/회원가입</summary>
+
+          <label>
+            아이디
+            <input id="authUsername" value="" placeholder="아이디" autocomplete="username" />
+          </label>
+
+          <label>
+            비밀번호
+            <input id="authPassword" value="" type="password" placeholder="비밀번호" autocomplete="current-password" />
+          </label>
+          <p class="tool-hint">비밀번호: 8자 이상, 소문자/숫자 필수, 대문자 또는 특수문자 포함</p>
+
+          <div class="inline-actions">
+            <button id="btnSignup" type="button" class="secondary">회원가입</button>
+            <button id="btnLogin" type="button">로그인</button>
+            <button id="btnLogout" type="button" class="secondary">로그아웃</button>
+          </div>
+        </details>
+
+        <div class="inline-actions auth-footer-actions">
+          <button id="btnLogoutQuick" type="button" class="secondary">로그아웃</button>
+        </div>
+        <p id="authMessage" class="tool-hint">로그인 후 계정별 노트가 저장됩니다.</p>
+      </div>
+
+      <p class="menu-current-note">현재 노트: <span id="menuCurrentNote">선택 없음</span></p>
+
+      <label>
+        새 노트 제목
+        <input id="newTitle" value="새 노트" />
+      </label>
+
+      <div class="inline-actions">
+        <button id="btnLoadNotes" class="secondary">목록 새로고침</button>
+        <button id="btnCreate">노트 생성</button>
+      </div>
+
+      <label>
+        노트 제목 변경
+        <input id="title" value="" />
+      </label>
+
+      <div class="inline-actions">
+        <button id="btnRename" class="secondary">제목 변경</button>
+        <button id="btnSync">동기화 저장</button>
+      </div>
+
+      <div class="inline-actions">
+        <button id="btnDeletePage" class="secondary">현재 페이지 삭제</button>
+        <button id="btnExport" class="accent">PDF 내보내기</button>
+      </div>
+
+      <h3>노트 목록</h3>
+      <ul id="notesList" class="notes-list"></ul>
+    </aside>
+
+    <div id="menuBackdrop" class="menu-backdrop"></div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

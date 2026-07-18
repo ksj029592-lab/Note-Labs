@@ -1,0 +1,398 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "11766087160490887893"
+    }
+  },
+  "parameters": {
+    "environmentName": {
+      "type": "string",
+      "metadata": {
+        "description": "Environment name used as a suffix for resource names."
+      }
+    },
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Primary deployment location."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Tags applied to resources."
+      }
+    },
+    "appName": {
+      "type": "string",
+      "defaultValue": "web",
+      "metadata": {
+        "description": "Container app service name used by azd service mapping."
+      }
+    },
+    "bootstrapImageName": {
+      "type": "string",
+      "defaultValue": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
+      "metadata": {
+        "description": "Bootstrap image used only for provisioning when app image is not provided yet."
+      }
+    },
+    "entraAuthRequired": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Toggle Entra token enforcement in the app."
+      }
+    },
+    "entraIssuer": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Expected Entra issuer URL. Leave empty if not configured yet."
+      }
+    },
+    "entraAudience": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Expected Entra audience. Leave empty if not configured yet."
+      }
+    },
+    "entraJwksUri": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Optional Entra JWKS URI."
+      }
+    },
+    "postgresAdminUsername": {
+      "type": "string",
+      "defaultValue": "notelabsadmin",
+      "metadata": {
+        "description": "PostgreSQL admin username."
+      }
+    },
+    "postgresAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "PostgreSQL admin password."
+      }
+    },
+    "postgresDatabaseName": {
+      "type": "string",
+      "defaultValue": "notelabs",
+      "metadata": {
+        "description": "PostgreSQL database name used by this application."
+      }
+    },
+    "blobContainerName": {
+      "type": "string",
+      "defaultValue": "note-exports",
+      "metadata": {
+        "description": "Blob container for exported PDFs."
+      }
+    }
+  },
+  "variables": {
+    "suffix": "[toLower(uniqueString(subscription().subscriptionId, resourceGroup().id, parameters('environmentName')))]",
+    "environmentNameSlug": "[toLower(replace(parameters('environmentName'), '_', '-'))]",
+    "environmentNameCompact": "[replace(variables('environmentNameSlug'), '-', '')]",
+    "storageAccountName": "[format('st{0}{1}', take(variables('environmentNameCompact'), 8), take(variables('suffix'), 8))]",
+    "acrName": "[format('acr{0}{1}', take(variables('environmentNameCompact'), 10), take(variables('suffix'), 6))]",
+    "logAnalyticsName": "[format('log-{0}', variables('environmentNameSlug'))]",
+    "managedEnvironmentName": "[format('cae-{0}', variables('environmentNameSlug'))]",
+    "containerAppName": "[format('ca-{0}-{1}', variables('environmentNameSlug'), parameters('appName'))]",
+    "postgresServerName": "[format('psql-{0}-{1}', variables('environmentNameSlug'), take(variables('suffix'), 6))]",
+    "postgresServerFqdn": "[format('{0}.postgres.database.azure.com', variables('postgresServerName'))]",
+    "imageName": "[parameters('bootstrapImageName')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('logAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.App/managedEnvironments",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('managedEnvironmentName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "properties": {
+        "appLogsConfiguration": {
+          "destination": "log-analytics",
+          "logAnalyticsConfiguration": {
+            "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName')), '2023-09-01').customerId]",
+            "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName')), '2023-09-01').primarySharedKey]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-07-01",
+      "name": "[variables('acrName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Basic"
+      },
+      "properties": {
+        "adminUserEnabled": false,
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot",
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}', variables('storageAccountName'), 'default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2023-05-01",
+      "name": "[format('{0}/{1}/{2}', variables('storageAccountName'), 'default', parameters('blobContainerName'))]",
+      "properties": {
+        "publicAccess": "None"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/blobServices', variables('storageAccountName'), 'default')]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+      "apiVersion": "2023-12-01-preview",
+      "name": "[variables('postgresServerName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Standard_B1ms",
+        "tier": "Burstable"
+      },
+      "properties": {
+        "version": "16",
+        "administratorLogin": "[parameters('postgresAdminUsername')]",
+        "administratorLoginPassword": "[parameters('postgresAdminPassword')]",
+        "storage": {
+          "storageSizeGB": 32
+        },
+        "backup": {
+          "backupRetentionDays": 7,
+          "geoRedundantBackup": "Disabled"
+        },
+        "network": {
+          "publicNetworkAccess": "Enabled"
+        },
+        "createMode": "Create"
+      }
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+      "apiVersion": "2023-12-01-preview",
+      "name": "[format('{0}/{1}', variables('postgresServerName'), parameters('postgresDatabaseName'))]",
+      "properties": {
+        "charset": "UTF8",
+        "collation": "en_US.utf8"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+      "apiVersion": "2023-12-01-preview",
+      "name": "[format('{0}/{1}', variables('postgresServerName'), 'AllowAzureServices')]",
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "0.0.0.0"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2024-03-01",
+      "name": "[variables('containerAppName')]",
+      "location": "[parameters('location')]",
+      "tags": "[union(parameters('tags'), createObject('azd-service-name', parameters('appName')))]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('managedEnvironmentName'))]",
+        "configuration": {
+          "ingress": {
+            "external": true,
+            "targetPort": 80,
+            "transport": "auto",
+            "traffic": [
+              {
+                "latestRevision": true,
+                "weight": 100
+              }
+            ]
+          },
+          "registries": [
+            {
+              "server": "[reference(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName')), '2023-07-01').loginServer]",
+              "identity": "system"
+            }
+          ],
+          "secrets": [
+            {
+              "name": "database-url",
+              "value": "[format('postgres://{0}:{1}@{2}:5432/{3}?sslmode=require', parameters('postgresAdminUsername'), parameters('postgresAdminPassword'), variables('postgresServerFqdn'), parameters('postgresDatabaseName'))]"
+            }
+          ]
+        },
+        "template": {
+          "containers": [
+            {
+              "name": "[parameters('appName')]",
+              "image": "[variables('imageName')]",
+              "resources": {
+                "cpu": "[json('0.5')]",
+                "memory": "1Gi"
+              },
+              "env": [
+                {
+                  "name": "PORT",
+                  "value": "80"
+                },
+                {
+                  "name": "ENTRA_AUTH_REQUIRED",
+                  "value": "[string(parameters('entraAuthRequired'))]"
+                },
+                {
+                  "name": "ENTRA_ISSUER",
+                  "value": "[parameters('entraIssuer')]"
+                },
+                {
+                  "name": "ENTRA_AUDIENCE",
+                  "value": "[parameters('entraAudience')]"
+                },
+                {
+                  "name": "ENTRA_JWKS_URI",
+                  "value": "[parameters('entraJwksUri')]"
+                },
+                {
+                  "name": "DATABASE_URL",
+                  "secretRef": "database-url"
+                },
+                {
+                  "name": "AZURE_STORAGE_ACCOUNT_URL",
+                  "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-05-01').primaryEndpoints.blob]"
+                },
+                {
+                  "name": "AZURE_BLOB_PDF_CONTAINER",
+                  "value": "[parameters('blobContainerName')]"
+                }
+              ]
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 3
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]",
+        "[resourceId('Microsoft.App/managedEnvironments', variables('managedEnvironmentName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName')), variables('containerAppName'), 'acrpull')]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.App/containerApps', variables('containerAppName')), '2024-03-01', 'full').identity.principalId]",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', variables('acrName'))]",
+        "[resourceId('Microsoft.App/containerApps', variables('containerAppName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+      "name": "[guid(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), variables('containerAppName'), 'blobdatacontributor')]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.App/containerApps', variables('containerAppName')), '2024-03-01', 'full').identity.principalId]",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.App/containerApps', variables('containerAppName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "AZURE_CONTAINER_REGISTRY_NAME": {
+      "type": "string",
+      "value": "[variables('acrName')]"
+    },
+    "AZURE_CONTAINER_REGISTRY_ENDPOINT": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', variables('acrName')), '2023-07-01').loginServer]"
+    },
+    "AZURE_CONTAINER_APP_NAME": {
+      "type": "string",
+      "value": "[variables('containerAppName')]"
+    },
+    "AZURE_CONTAINER_APP_URL": {
+      "type": "string",
+      "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', variables('containerAppName')), '2024-03-01').configuration.ingress.fqdn)]"
+    },
+    "AZURE_POSTGRES_SERVER_NAME": {
+      "type": "string",
+      "value": "[variables('postgresServerName')]"
+    },
+    "AZURE_STORAGE_ACCOUNT_NAME": {
+      "type": "string",
+      "value": "[variables('storageAccountName')]"
+    }
+  }
+}

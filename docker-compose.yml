@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16
+    container_name: notelabs-db
+    environment:
+      POSTGRES_DB: notelabs
+      POSTGRES_USER: notelabs
+      POSTGRES_PASSWORD: notelabs123!
+    ports:
+      - "5432:5432"
+    volumes:
+      - notelabs_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notelabs -d notelabs"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: notelabs:local
+    container_name: notelabs-app
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.docker
+    environment:
+      DATABASE_URL: postgres://notelabs:notelabs123!@db:5432/notelabs?sslmode=disable
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  notelabs_pgdata:

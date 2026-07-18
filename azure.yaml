@@ -1,0 +1,10 @@
+name: notelabs
+metadata:
+  template: notelabs@1.0.0
+services:
+  web:
+    project: .
+    language: js
+    host: containerapp
+    docker:
+      path: ./Dockerfile

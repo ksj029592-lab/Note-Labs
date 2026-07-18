@@ -85,6 +85,16 @@ flowchart LR
 - Safari: Pointer Events/Canvas 차이 대응 분기
 - 폴리필 최소화, 기능 감지 기반 분기 적용
 
+### 5.5 초기 화면 정책 (MVP)
+- 메인 캔버스 중심 편집: 필기/텍스트/PDF 주석은 중앙 캔버스에서 수행
+- 우측 상단 햄버거 메뉴: 라이브러리 패널 토글 진입점
+- 라이브러리 패널:
+  - 노트 전환(목록에서 즉시 편집 노트 전환)
+  - 최근/고정/검색 결과 기반 빠른 열기
+- 디바이스별 패널 형태:
+  - 모바일/태블릿: 오버레이
+  - 노트북/데스크톱: 사이드 패널
+
 ## 6. 백엔드 아키텍처
 
 ### 6.1 API 계층
@@ -120,6 +130,18 @@ flowchart LR
   2. 충돌 사본(conflict copy) 생성
   3. 사용자에게 복구 가능한 상태 제공
   4. Web PubSub 채널로 갱신 이벤트 전달
+
+### 6.4 Sync API 계약 (MVP)
+- Endpoint: `POST /api/notebooks/{id}/sync`
+- Header: `Idempotency-Key: {notebook_id}-{client_seq}`
+- 기본 정책:
+  - ACK 미수신 시 지수 백오프 재시도(1s, 2s, 4s, 8s, 16s)
+  - 중복 요청은 Idempotency-Key 기반 중복 반영 방지
+- 충돌 응답 최소 필드:
+  - `status: conflict`
+  - `serverVersion`
+  - `conflictRegions`
+  - `mergeCandidates`
 
 ## 7. 데이터 저장 구조
 
@@ -163,6 +185,13 @@ flowchart LR
 - Azure 연계
   - 온라인 복귀 시 API를 통해 서버 반영 후 Web PubSub 이벤트로 타 디바이스 갱신
 
+### 9.1 복구 정책 수치 (MVP 기준)
+- 자동 스냅샷: 5분 또는 20회 변경마다 생성(선도달 조건)
+- 휴지통 보관: 30일
+- 복구 목표:
+  - RTO: 복원 요청 후 10분 이내
+  - RPO: 최대 5분
+
 ## 10. 보안 아키텍처
 1. HTTPS 전용
 2. Entra External ID 기반 인증/JWT 검증
@@ -202,6 +231,13 @@ flowchart LR
   - 자동 저장 p95
   - 동기화 반영 p95
   - 에디터 인터랙션 FPS/지연 측정
+
+### 12.5 OCR 품질 기준 (MVP)
+- 한글 문자 정확도 >= 94%
+- 영문 문자 정확도 >= 96%
+- 숫자 인식 정확도 >= 98%
+- 혼합 수식/필기 검색 성공률 >= 85%
+- 측정 방식: 언어별 100샘플 수동 검수(월 1회)
 
 ## 13. 배포/운영 아키텍처
 

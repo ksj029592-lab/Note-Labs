@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.vscode
+coverage
+dist
+.azure
+.env
+.env.*
+README.md
+ARCHITECTURE.md
+CROSS_VALIDATION.md
+IDEATION.md
+PRD.md

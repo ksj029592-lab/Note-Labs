@@ -54,6 +54,65 @@ npm run dev:server
 npm run db:migrate
 ```
 
+## 로컬 Docker Compose 실행
+
+```bash
+docker compose up --build
+```
+
+접속:
+- 앱: http://localhost:3000
+- 헬스체크: http://localhost:3000/health
+
+종료:
+```bash
+docker compose down
+```
+
+데이터까지 삭제:
+```bash
+docker compose down -v
+```
+
+참고:
+- 기본 구성은 로컬 PostgreSQL을 함께 띄웁니다.
+- PDF export는 기본 비활성화이며, `.env.docker`에서 Azure Blob 관련 값을 채우면 활성화할 수 있습니다.
+
+## Azure 배포 준비 (azd)
+
+이 프로젝트는 `azd` + Azure Container Apps 기준으로 준비되었습니다.
+
+### 1) 사전 준비
+```bash
+azd auth login
+azd env new dev
+azd env set AZURE_LOCATION koreacentral
+azd env set POSTGRES_ADMIN_PASSWORD <강한-비밀번호>
+```
+
+선택적으로 Entra 인증을 바로 적용하려면 아래 값도 설정하세요.
+```bash
+azd env set ENTRA_ISSUER <issuer-url>
+azd env set ENTRA_AUDIENCE <audience>
+azd env set ENTRA_JWKS_URI <jwks-uri>
+```
+
+### 2) 프로비저닝 + 배포
+```bash
+azd up
+```
+
+### 3) 앱만 재배포
+```bash
+azd deploy
+```
+
+생성된 인프라:
+- Azure Container Apps (웹 앱)
+- Azure Container Registry
+- Azure Database for PostgreSQL Flexible Server
+- Azure Storage Account + Blob container (`note-exports`)
+
 ## 현재 TDD 사이클
 1. 도메인 사이클: 노트 생성/수정/삭제 규칙
 2. 애플리케이션 사이클: 노트 생성/조회 서비스

@@ -6,6 +6,8 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server/index.js",
     "typecheck": "tsc --noEmit",
     "dev:server": "tsx src/server/index.ts",
     "db:migrate": "tsx src/scripts/migrate.ts"
